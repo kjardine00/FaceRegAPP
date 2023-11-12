@@ -1,107 +1,140 @@
-import React, { Component } from 'react';
-// import Clarifai from 'clarifai';
-import ParticlesBg from 'particles-bg';
+import React, { Component } from "react";
+// import Clarifai from "clarifai";
+import ParticlesBg from "particles-bg";
 import Navigation from "./Component/Navigation/Navigation";
-import Logo from './Component/Logo/Logo';
-import Rank from './Component/Rank/Rank';
-import ImageLinkForm from './Component/ImageLinkForm/ImageLinkForm';
-import './App.css';
+import Logo from "./Component/Logo/Logo";
+import Rank from "./Component/Rank/Rank";
+import ImageLinkForm from "./Component/ImageLinkForm/ImageLinkForm";
+import FaceRecognition from "./Component/FaceRecognition/FaceRecognition";
+import SignIn from "./Component/SignIn/SignIn";
+import "./App.css";
 
-const imageURL = this.input;
-// Your PAT (Personal Access Token) can be found in the portal under Authentification
-const PAT = '79b90bc47f924e1da82aac7a239b5aac';
-// Specify the correct user_id/app_id pairings
-// Since you're making inferences outside your app's scope
-const USER_ID = 'kjardine00';       
-const APP_ID = 'face-recognition-app';
-// Change these to whatever model and image URL you want to use
-const MODEL_ID = 'general-image-recognition';
-const MODEL_VERSION_ID = 'face-detection';    
-const IMAGE_URL = imageURL;
+const returnClarifaiRequestOptions = (imageUrl) => {
+  // Your PAT (Personal Access Token) can be found in the portal under Authentification
+  const PAT = "79b90bc47f924e1da82aac7a239b5aac";
+  // Specify the correct user_id/app_id pairings
+  // Since you're making inferences outside your app's scope
+  const USER_ID = "kjardine00";
+  const APP_ID = "face-recognition-app";
+  // Change these to whatever model and image URL you want to use
+  // const MODEL_ID = "face-detection";
+  const IMAGE_URL = imageUrl;
 
-///////////////////////////////////////////////////////////////////////////////////
-// YOU DO NOT NEED TO CHANGE ANYTHING BELOW THIS LINE TO RUN THIS EXAMPLE
-///////////////////////////////////////////////////////////////////////////////////
-
-const raw = JSON.stringify({
-    "user_app_id": {
-        "user_id": USER_ID,
-        "app_id": APP_ID
+  const raw = JSON.stringify({
+    user_app_id: {
+      user_id: USER_ID,
+      app_id: APP_ID,
     },
-    "inputs": [
-        {
-            "data": {
-                "image": {
-                    "url": IMAGE_URL
-                }
-            }
-        }
-    ]
-});
+    inputs: [
+      {
+        data: {
+          image: {
+            url: IMAGE_URL,
+          },
+        },
+      },
+    ],
+  });
 
-const requestOptions = {
-    method: 'POST',
+  const requestOptions = {
+    method: "POST",
     headers: {
-        'Accept': 'application/json',
-        'Authorization': 'Key ' + PAT
+      Accept: "application/json",
+      Authorization: "Key " + PAT,
     },
-    body: raw
+    body: raw,
+  };
+
+  return requestOptions;
 };
-
-// NOTE: MODEL_VERSION_ID is optional, you can also call prediction with the MODEL_ID only
-// https://api.clarifai.com/v2/models/{YOUR_MODEL_ID}/outputs
-// this will default to the latest version_id
-
-fetch("https://api.clarifai.com/v2/models/" + MODEL_ID + "/versions/" + MODEL_VERSION_ID + "/outputs", requestOptions)
-    .then(response => response.text())
-    .then(result => console.log(result))
-    .catch(error => console.log('error', error));
-
-// const app = new Clarifai.App({
-//   apiKey: '78dde200adba427e8f491feb96082aab'
-//  });
 
 class App extends Component {
   constructor() {
     super();
     this.state = {
-      input: '',
-    }
+      input: "",
+      imageUrl: "",
+      faceRegions: [],
+      route: "signIn",
+    };
   }
+
+  calcFaceLocations = (data) => {
+    const len = data.outputs[0].data.regions.length;
+    const faceRegions = [];
+
+    const image = document.getElementById("inputImage");
+    const width = Number(image.width);
+    const height = Number(image.height);
+
+    for (let i = 0; i < len; i++) {
+      const faceLocation = data.outputs[0].data.regions[i].region_info.bounding_box;
+      const bounding_box = {
+        topRow: faceLocation.top_row * height,
+        leftCol: faceLocation.left_col * width,
+        bottomRow: height - faceLocation.bottom_row * height,
+        rightCol: width - faceLocation.right_col * width,
+      };
+      
+      faceRegions.push(bounding_box);
+    }
+    return faceRegions;
+  };
+
+  displayFaceBoxes = (newRegions) => {
+    this.setState({
+      faceRegions: [...this.state.faceRegions, newRegions]
+    });
+    console.log('test', this.state.faceRegions)
+  };
 
   onInputChange = (event) => {
-    console.log(event);
-  }
+    this.setState({ input: event.target.value });
+  };
 
   onButtonSubmit = () => {
-    console.log('click');
-    fetch("https://api.clarifai.com/v2/models/" + MODEL_ID + "/versions/" + MODEL_VERSION_ID + "/outputs", requestOptions)
-    .then(response => response.text())
-    .then(result => console.log(result))
-    .catch(error => console.log('error', error));
+    const model_Id = "face-detection";
+    this.setState({ imageUrl: this.state.input });
 
-    app.models.predict("API_KEY", "IMAGE")
-    .then(
-      function(response) {
-        // Do something with the response
-        console.log(response);
-      },
-      function(err) {
-        // Handle the error
-        console.log(err);
-      }
-    );
-  }
+    fetch(
+      "https://api.clarifai.com/v2/models/" + model_Id + "/outputs",
+      returnClarifaiRequestOptions(this.state.input)
+    )
+      .then((response) => response.json())
+      .then((response) => this.displayFaceBoxes(this.calcFaceLocations(response)))
+      .catch((err) => console.log(err));
+  };
+
+  onRouteChange = (route) => {
+    this.setState({ route: route });
+  };
 
   render() {
     return (
       <div className="App">
-        <ParticlesBg color={["#26798B", "#86E398"]} num={50} type="square" bg={true} />
-        <Navigation />
-        <Logo />
-        <Rank />
-        <ImageLinkForm onInputChange={this.onInputChange} onButtonSubmit={this.onButtonSubmit} />
-        <FaceRecognition />
+        <ParticlesBg
+          color={["#26798B", "#86E398"]}
+          num={50}
+          type="square"
+          bg={true}
+        />
+        <Navigation onRouteChange={this.onRouteChange} />
+        {this.state.route === "signIn" ? (
+          <SignIn onRouteChange={this.onRouteChange} />
+        ) : (
+          <div>
+            <Logo />
+            <Rank />
+            <ImageLinkForm
+              onInputChange={this.onInputChange}
+              onButtonSubmit={this.onButtonSubmit}
+            />
+            <FaceRecognition
+              faceRegions={this.state.faceRegions}
+              imageUrl={this.state.imageUrl}
+            />
+          </div>
+        )}
       </div>
     );
   }

@@ -1,5 +1,4 @@
 import React from "react";
-// import Tilt from "react-parallax-tilt";
 import { Tilt } from 'react-tilt'
 import "./Logo.css";
 import logo_img from "./logo_img.png";
