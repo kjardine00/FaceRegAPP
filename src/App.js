@@ -7,6 +7,7 @@ import Rank from "./Component/Rank/Rank";
 import ImageLinkForm from "./Component/ImageLinkForm/ImageLinkForm";
 import FaceRecognition from "./Component/FaceRecognition/FaceRecognition";
 import SignIn from "./Component/SignIn/SignIn";
+import Register from "./Component/Register/Register";
 import "./App.css";
 
 const returnClarifaiRequestOptions = (imageUrl) => {
@@ -55,7 +56,8 @@ class App extends Component {
       input: "",
       imageUrl: "",
       faceRegions: [],
-      route: "signIn",
+      route: "signin",
+      isSignedIn: false,
     };
   }
 
@@ -68,14 +70,15 @@ class App extends Component {
     const height = Number(image.height);
 
     for (let i = 0; i < len; i++) {
-      const faceLocation = data.outputs[0].data.regions[i].region_info.bounding_box;
+      const faceLocation =
+        data.outputs[0].data.regions[i].region_info.bounding_box;
       const bounding_box = {
         topRow: faceLocation.top_row * height,
         leftCol: faceLocation.left_col * width,
         bottomRow: height - faceLocation.bottom_row * height,
         rightCol: width - faceLocation.right_col * width,
       };
-      
+
       faceRegions.push(bounding_box);
     }
     return faceRegions;
@@ -83,9 +86,8 @@ class App extends Component {
 
   displayFaceBoxes = (newRegions) => {
     this.setState({
-      faceRegions: [...this.state.faceRegions, newRegions]
+      faceRegions: [...this.state.faceRegions, newRegions],
     });
-    console.log('test', this.state.faceRegions)
   };
 
   onInputChange = (event) => {
@@ -101,15 +103,23 @@ class App extends Component {
       returnClarifaiRequestOptions(this.state.input)
     )
       .then((response) => response.json())
-      .then((response) => this.displayFaceBoxes(this.calcFaceLocations(response)))
+      .then((response) =>
+        this.displayFaceBoxes(this.calcFaceLocations(response))
+      )
       .catch((err) => console.log(err));
   };
 
   onRouteChange = (route) => {
+    if (route === 'signout') {
+      this.setState({isSignedIn: false})
+    } else if (route === 'home') {
+      this.setState({isSignedIn: true})
+    }
     this.setState({ route: route });
   };
 
   render() {
+    const { isSignedIn, imageUrl, faceRegions, route} = this.state;
     return (
       <div className="App">
         <ParticlesBg
@@ -118,10 +128,8 @@ class App extends Component {
           type="square"
           bg={true}
         />
-        <Navigation onRouteChange={this.onRouteChange} />
-        {this.state.route === "signIn" ? (
-          <SignIn onRouteChange={this.onRouteChange} />
-        ) : (
+        <Navigation onRouteChange={this.onRouteChange} isSignedIn={isSignedIn}/>
+        {route === "home" ? (
           <div>
             <Logo />
             <Rank />
@@ -130,10 +138,14 @@ class App extends Component {
               onButtonSubmit={this.onButtonSubmit}
             />
             <FaceRecognition
-              faceRegions={this.state.faceRegions}
-              imageUrl={this.state.imageUrl}
+              faceRegions={faceRegions}
+              imageUrl={imageUrl}
             />
           </div>
+        ) : ( 
+          route === 'signin' ?
+          <Register onRouteChange={this.onRouteChange} />
+          : <SignIn onRouteChange={this.onRouteChange} />
         )}
       </div>
     );
