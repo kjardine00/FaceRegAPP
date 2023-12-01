@@ -55,15 +55,15 @@ class App extends Component {
       input: "",
       imageUrl: "",
       faceRegions: [],
-      route: "signin",
-      isSignedIn: false,
+      route: "home",
+      isSignedIn: true,
       user: {
-        id: "",
-        name: "",
-        email: "",
+        id: "123",
+        name: "john",
+        email: "john@email.com",
         entries: 0,
-        joined: '',
-      }
+        joined: "",
+      },
     };
   }
 
@@ -100,7 +100,7 @@ class App extends Component {
     this.setState({ input: event.target.value });
   };
 
-  onButtonSubmit = () => {
+  onImageSubmit = () => {
     const model_Id = "face-detection";
     this.setState({ imageUrl: this.state.input });
 
@@ -109,9 +109,20 @@ class App extends Component {
       returnClarifaiRequestOptions(this.state.input)
     )
       .then((response) => response.json())
-      .then((response) =>
-        this.displayFaceBoxes(this.calcFaceLocations(response))
-      )
+      .then((response) => {
+        if (response) {
+          const len = response.outputs[0].data.regions.length;
+          fetch("http://localhost:3000/image", {
+            method: "put",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              id: this.state.input,
+              entries: len,
+            }),
+          });
+        }
+        this.displayFaceBoxes(this.calcFaceLocations(response));
+      })
       .catch((err) => console.log(err));
   };
 
@@ -125,17 +136,19 @@ class App extends Component {
   };
 
   loadUser = (data) => {
-    this.setState({ user: {
-      id: data.id,
-      name: data.name,
-      email: data.email,
-      entries: data.entries,
-      joined: data.joined,
-    }})
-  }
+    this.setState({
+      user: {
+        id: data.id,
+        name: data.name,
+        email: data.email,
+        entries: data.entries,
+        joined: data.joined,
+      },
+    });
+  };
 
   render() {
-    const { isSignedIn, imageUrl, faceRegions, route } = this.state;
+    const { isSignedIn, imageUrl, faceRegions, route, user } = this.state;
     return (
       <div className="App">
         <ParticlesBg
@@ -151,15 +164,22 @@ class App extends Component {
         {route === "home" ? (
           <div>
             <Logo />
-            <Rank loadUser={this.loadUser}/>
+            <Rank name={user.name} entries={user.entries} />
             <ImageLinkForm
               onInputChange={this.onInputChange}
-              onButtonSubmit={this.onButtonSubmit}
+              onButtonSubmit={this.onImageSubmit}
             />
-            <FaceRecognition faceRegions={faceRegions} imageUrl={imageUrl} />
+            <FaceRecognition
+              faceRegions={faceRegions}
+              imageUrl={imageUrl}
+              entryCount={this.updateEntries}
+            />
           </div>
         ) : route === "register" ? (
-          <Register onRouteChange={this.onRouteChange} loadUser={this.loadUser} />
+          <Register
+            onRouteChange={this.onRouteChange}
+            loadUser={this.loadUser}
+          />
         ) : (
           <SignIn onRouteChange={this.onRouteChange} loadUser={this.loadUser} />
         )}

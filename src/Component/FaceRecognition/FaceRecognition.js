@@ -12,9 +12,10 @@ const FaceRecognition = ({ imageUrl, faceRegions }) => {
           width="500px"
           height="auto"
         />
-        {faceRegions[0]?.map((region) => {
+        {faceRegions[0]?.map((region, i) => {
           return (
             <div
+              key={i}
               className="bounding-box"
               style={{
                 top: region.topRow,
