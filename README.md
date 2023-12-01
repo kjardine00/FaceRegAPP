@@ -1,1 +1,1 @@
-https://kjardine00.github.io/facerecognitionapp/
+This website is hosted at: https://facerecognitionkylejardine.netlify.app
