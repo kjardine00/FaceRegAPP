@@ -1,25 +1,37 @@
 import React from "react";
 
 class SignIn extends React.Component {
-  constructor() {
-    super();
+  constructor(props) {
+    super(props);
     this.state = {
-      signInEmail: "",
-      signInPassword: "",
+      signInEmailInput: "",
+      signInPasswordInput: "",
     };
   }
 
   onEmailChange = (event) => {
-    this.setState({ signInEmail: event.target.value });
+    this.setState({ signInEmailInput: event.target.value });
   };
 
   onPasswordChange = (event) => {
-    this.setState({ signInPassword: event.target.value });
+    this.setState({ signInPasswordInput: event.target.value });
   };
 
   onSubmitSignIn = () => {
-    fetch('http://localhostL:3000/signin')
-    this.props.onRouteChange("home");
+    fetch("http://localhost:3000/signin", {
+      method: "post",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: this.state.signInEmailInput,
+        password: this.state.signInPasswordInput,
+      }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data === "success") {
+          this.props.onRouteChange("home");
+        }
+      });
   };
 
   render() {
@@ -61,7 +73,7 @@ class SignIn extends React.Component {
                   onClick={this.onSubmitSignIn}
                   className="b ph3 pv2 input-reset ba b--black bg-transparent grow pointer f6 dib"
                   type="submit"
-                  value="Sign in"
+                  value="Submit"
                 />
               </div>
               <div className="lh-copy mt3">
