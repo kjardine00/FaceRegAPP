@@ -11,14 +11,12 @@ import "./App.css";
 
 const returnClarifaiRequestOptions = (imageUrl) => {
   // Your PAT (Personal Access Token) can be found in the portal under Authentification
-  const PAT = "79b90bc47f924e1da82aac7a239b5aac";
+  const PAT = "37c79d6f0efd48b5b6098dfa6c975de3";
   // Specify the correct user_id/app_id pairings
   // Since you're making inferences outside your app's scope
   const USER_ID = "kjardine00";
   const APP_ID = "face-recognition-app";
   // Change these to whatever model and image URL you want to use
-  // const MODEL_ID = "face-detection";
-  const IMAGE_URL = imageUrl;
 
   const raw = JSON.stringify({
     user_app_id: {
@@ -29,7 +27,7 @@ const returnClarifaiRequestOptions = (imageUrl) => {
       {
         data: {
           image: {
-            url: IMAGE_URL,
+            url: imageUrl,
           },
         },
       },
@@ -101,25 +99,31 @@ class App extends Component {
   };
 
   onImageSubmit = () => {
-    const model_Id = "face-detection";
+    const MODEL_ID = "face-detection";
+    const MODEL_VERSION_ID = "6dc7e46bc9124c5c8824be4822abe105";
     this.setState({ imageUrl: this.state.input });
 
     fetch(
-      "https://api.clarifai.com/v2/models/" + model_Id + "/outputs",
+      "https://api.clarifai.com/v2/models/" +
+        MODEL_ID +
+        "/versions/" +
+        MODEL_VERSION_ID +
+        "/outputs",
       returnClarifaiRequestOptions(this.state.input)
     )
       .then((response) => response.json())
       .then((response) => {
         if (response) {
-          const len = response.outputs[0].data.regions.length;
-          fetch("http://localhost:3000/image", {
-            method: "put",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              id: this.state.input,
-              entries: len,
-            }),
-          });
+          console.log(response);
+          // const len = response.outputs[0].data.regions.length;
+          // fetch("http://localhost:3000/image", {
+          //   method: "put",
+          //   headers: { "Content-Type": "application/json" },
+          //   body: JSON.stringify({
+          //     id: this.state.input,
+          //     entries: 1,
+          //   }),
+          // });
         }
         this.displayFaceBoxes(this.calcFaceLocations(response));
       })
