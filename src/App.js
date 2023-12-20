@@ -53,7 +53,7 @@ class App extends Component {
       input: "",
       imageUrl: "",
       faceRegions: [],
-      route: "home",
+      route: "signin",
       isSignedIn: true,
       user: {
         id: "123",
@@ -114,20 +114,28 @@ class App extends Component {
       .then((response) => response.json())
       .then((response) => {
         if (response) {
-          console.log(response);
-          // const len = response.outputs[0].data.regions.length;
-          // fetch("http://localhost:3000/image", {
-          //   method: "put",
-          //   headers: { "Content-Type": "application/json" },
-          //   body: JSON.stringify({
-          //     id: this.state.input,
-          //     entries: 1,
-          //   }),
-          // });
+          const len = response.outputs[0].data.regions.length;
+          fetch("http://localhost:3000/image", {
+            method: "put",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              id: this.state.user.id,
+              entries: len,
+            }),
+          });
         }
         this.displayFaceBoxes(this.calcFaceLocations(response));
       })
       .catch((err) => console.log(err));
+      this.reloadEntries();
+    };
+
+  reloadEntries = () => {
+    fetch("http://localhost:3000/profile/" + this.state.user.id)
+      .then((response) => response.json())
+      .then((data) => {
+        this.loadUser(data);
+      });
   };
 
   onRouteChange = (route) => {

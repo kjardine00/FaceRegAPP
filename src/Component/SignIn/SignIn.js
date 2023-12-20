@@ -26,16 +26,10 @@ class SignIn extends React.Component {
         password: this.state.signInPasswordInput,
       }),
     })
-      .then((response) => {
-        if (response.status === 200) {
-          return response.json();
-        } else {
-          console.log("error with the response");
-        }
-      })
-      .then((data) => {
-        if (data.id) {
-          this.props.loadUser(data);
+      .then(response => response.json())
+      .then((user) => {
+        if (user.id) {
+          this.props.loadUser(user);
           this.props.onRouteChange("home");
         }
       });
