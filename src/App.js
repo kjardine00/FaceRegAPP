@@ -68,7 +68,7 @@ class App extends Component {
     // const MODEL_VERSION_ID = "6dc7e46bc9124c5c8824be4822abe105";
     this.setState({ imageUrl: this.state.input });
 
-    fetch("https://faceregserver.onrender.com:10000/imageurl", {
+    fetch("https://faceregserver.onrender.com/imageurl", {
       method: "post",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -78,7 +78,7 @@ class App extends Component {
       .then((response) => response.json())
       .then((response) => {
         const len = response.outputs[0].data.regions.length;
-        fetch("https://faceregserver.onrender.com:10000/image", {
+        fetch("https://faceregserver.onrender.com/image", {
           method: "put",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -93,7 +93,7 @@ class App extends Component {
   };
 
   reloadEntries = () => {
-    fetch("https://faceregserver.onrender.com:10000/profile/" + this.state.user.id)
+    fetch("https://faceregserver.onrender.com/profile/" + this.state.user.id)
       .then((response) => response.json())
       .then((data) => {
         this.loadUser(data);
