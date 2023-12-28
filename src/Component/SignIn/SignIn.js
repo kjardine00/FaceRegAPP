@@ -18,7 +18,7 @@ class SignIn extends React.Component {
   };
 
   onSubmitSignIn = () => {
-    fetch("http://localhost:3000/signin", {
+    fetch("https://smartbrainwebapi.onrender.com:10000/signin", {
       method: "post",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -26,13 +26,14 @@ class SignIn extends React.Component {
         password: this.state.signInPasswordInput,
       }),
     })
-      .then(response => response.json())
+      .then((response) => response.json())
       .then((user) => {
         if (user.id) {
           this.props.loadUser(user);
           this.props.onRouteChange("home");
         }
-      });
+      })
+      .catch((err) => console.log(err));
   };
 
   render() {

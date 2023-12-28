@@ -9,60 +9,25 @@ import SignIn from "./Component/SignIn/SignIn";
 import Register from "./Component/Register/Register";
 import "./App.css";
 
-const returnClarifaiRequestOptions = (imageUrl) => {
-  // Your PAT (Personal Access Token) can be found in the portal under Authentification
-  const PAT = "37c79d6f0efd48b5b6098dfa6c975de3";
-  // Specify the correct user_id/app_id pairings
-  // Since you're making inferences outside your app's scope
-  const USER_ID = "kjardine00";
-  const APP_ID = "face-recognition-app";
-  // Change these to whatever model and image URL you want to use
-
-  const raw = JSON.stringify({
-    user_app_id: {
-      user_id: USER_ID,
-      app_id: APP_ID,
-    },
-    inputs: [
-      {
-        data: {
-          image: {
-            url: imageUrl,
-          },
-        },
-      },
-    ],
-  });
-
-  const requestOptions = {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      Authorization: "Key " + PAT,
-    },
-    body: raw,
-  };
-
-  return requestOptions;
+const initialState = {
+  input: "",
+  imageUrl: "",
+  faceRegions: [],
+  route: "signin",
+  isSignedIn: true,
+  user: {
+    id: "",
+    name: "",
+    email: "",
+    entries: 0,
+    joined: "",
+  },
 };
 
 class App extends Component {
   constructor() {
     super();
-    this.state = {
-      input: "",
-      imageUrl: "",
-      faceRegions: [],
-      route: "signin",
-      isSignedIn: true,
-      user: {
-        id: "123",
-        name: "john",
-        email: "john@email.com",
-        entries: 0,
-        joined: "",
-      },
-    };
+    this.state = initialState;
   }
 
   calcFaceLocations = (data) => {
@@ -99,48 +64,46 @@ class App extends Component {
   };
 
   onImageSubmit = () => {
-    const MODEL_ID = "face-detection";
-    const MODEL_VERSION_ID = "6dc7e46bc9124c5c8824be4822abe105";
+    // const MODEL_ID = "face-detection";
+    // const MODEL_VERSION_ID = "6dc7e46bc9124c5c8824be4822abe105";
     this.setState({ imageUrl: this.state.input });
 
-    fetch(
-      "https://api.clarifai.com/v2/models/" +
-        MODEL_ID +
-        "/versions/" +
-        MODEL_VERSION_ID +
-        "/outputs",
-      returnClarifaiRequestOptions(this.state.input)
-    )
+    fetch("https://faceregserver.onrender.com:10000/imageurl", {
+      method: "post",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        input: this.state.input,
+      }),
+    })
       .then((response) => response.json())
       .then((response) => {
-        if (response) {
-          const len = response.outputs[0].data.regions.length;
-          fetch("http://localhost:3000/image", {
-            method: "put",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              id: this.state.user.id,
-              entries: len,
-            }),
-          });
-        }
+        const len = response.outputs[0].data.regions.length;
+        fetch("https://faceregserver.onrender.com:10000/image", {
+          method: "put",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: this.state.user.id,
+            entries: len,
+          }),
+        });
         this.displayFaceBoxes(this.calcFaceLocations(response));
       })
       .catch((err) => console.log(err));
-      this.reloadEntries();
-    };
+    this.reloadEntries();
+  };
 
   reloadEntries = () => {
-    fetch("http://localhost:3000/profile/" + this.state.user.id)
+    fetch("https://faceregserver.onrender.com:10000/profile/" + this.state.user.id)
       .then((response) => response.json())
       .then((data) => {
         this.loadUser(data);
-      });
+      })
+      .catch((err) => console.log(err));
   };
 
   onRouteChange = (route) => {
-    if (route === "register") {
-      this.setState({ isSignedIn: false });
+    if (route === "signin") {
+      this.setState(initialState);
     } else if (route === "home") {
       this.setState({ isSignedIn: true });
     }
@@ -160,7 +123,7 @@ class App extends Component {
   };
 
   render() {
-    const { isSignedIn, imageUrl, faceRegions, route, user } = this.state;
+    const { imageUrl, faceRegions, route, user } = this.state;
     return (
       <div className="App">
         <ParticlesBg
@@ -169,10 +132,7 @@ class App extends Component {
           type="square"
           bg={true}
         />
-        <Navigation
-          onRouteChange={this.onRouteChange}
-          isSignedIn={isSignedIn}
-        />
+        <Navigation onRouteChange={this.onRouteChange} route={route} />
         {route === "home" ? (
           <div>
             <Logo />
